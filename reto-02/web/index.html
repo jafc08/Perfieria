@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>{{TITULO}} · Agente</title>
+<style>
+  :root { --bg:#f6f7f9; --card:#fff; --ink:#1d2433; --muted:#667085; --line:#e4e7ec; --brand:#0f6b4f; --warn:#b54708; --warnbg:#fffaeb; --err:#b42318; --errbg:#fef3f2; --okbg:#ecfdf3; }
+  * { box-sizing:border-box } body { margin:0; font:15px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif; background:var(--bg); color:var(--ink); }
+  header { position:sticky; top:0; background:var(--card); border-bottom:1px solid var(--line); padding:12px 20px; display:flex; gap:12px; align-items:center; z-index:2 }
+  header h1 { font-size:16px; margin:0; flex:1 } header small { color:var(--muted) }
+  button { font:inherit; border:1px solid var(--line); background:var(--card); border-radius:8px; padding:6px 12px; cursor:pointer }
+  button.primary { background:var(--brand); color:#fff; border-color:var(--brand) } button:disabled { opacity:.5; cursor:default }
+  main { max-width:980px; margin:0 auto; padding:16px 20px 160px }
+  .msg { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px 16px; margin:12px 0 }
+  .msg.user { background:#eef4ff; border-color:#d1e0ff; margin-left:15% }
+  .msg.confirm { border:2px solid var(--warn); background:var(--warnbg) }
+  .badge { display:inline-block; font-size:12px; font-weight:600; padding:2px 8px; border-radius:999px; margin-bottom:6px }
+  .badge.confirm { background:var(--warn); color:#fff } .badge.err { background:var(--err); color:#fff }
+  .tools { margin:8px 0; display:flex; flex-direction:column; gap:6px }
+  details.tool { border:1px solid var(--line); border-radius:8px; background:#fafbfc; font-size:13px }
+  details.tool summary { cursor:pointer; padding:6px 10px; font-family:ui-monospace,Menlo,monospace }
+  details.tool.ok summary::before { content:"✔ "; color:var(--brand) } details.tool.fail summary::before { content:"✖ "; color:var(--err) }
+  details.tool.blocked { border-color:var(--warn) }
+  details.tool pre { margin:0; padding:8px 10px; white-space:pre-wrap; word-break:break-word; border-top:1px solid var(--line); max-height:280px; overflow:auto }
+  .md table { border-collapse:collapse; margin:8px 0; font-size:13.5px; display:block; overflow-x:auto } .md th,.md td { border:1px solid var(--line); padding:4px 8px; text-align:left; vertical-align:top } .md th { background:#f2f4f7 }
+  .md code { background:#f2f4f7; padding:1px 4px; border-radius:4px; font-size:13px } .md h1,.md h2,.md h3 { font-size:15px; margin:10px 0 4px }
+  .md p { margin:6px 0 } .md ul { margin:6px 0; padding-left:22px }
+  footer { position:fixed; bottom:0; left:0; right:0; background:var(--card); border-top:1px solid var(--line); padding:12px 20px }
+  footer .row { max-width:980px; margin:0 auto; display:flex; gap:8px } textarea { flex:1; font:inherit; padding:10px; border:1px solid var(--line); border-radius:10px; resize:vertical; min-height:52px }
+  #banner { display:none; max-width:980px; margin:0 auto 8px; padding:8px 12px; border-radius:8px; background:var(--warnbg); color:var(--warn); font-weight:600; border:1px solid var(--warn) }
+  .thinking { color:var(--muted); font-style:italic } .hint { color:var(--muted); font-size:13px }
+</style>
+</head>
+<body>
+<header>
+  <h1>{{TITULO}} <small id="model"></small></h1>
+  <button id="example" title="Insertar el prompt de ejemplo del PRD">Ejemplo</button>
+  <button id="reset">Nueva sesión</button>
+</header>
+<main id="chat">
+  <div class="msg"><div class="md"><p>Hola. Soy el agente de <b>{{TITULO}}</b>. Pídeme procesar un caso; verás cada herramienta que uso y te pediré confirmación antes de cualquier acción externa.</p><p class="hint">Sesión: <code id="sid"></code></p></div></div>
+</main>
+<footer>
+  <div id="banner">⚠ El agente espera tu confirmación explícita. Responde «sí, confirmo» para continuar o indica qué cambiar.</div>
+  <div class="row">
+    <textarea id="input" placeholder="Escribe tu mensaje… (Enter para enviar, Shift+Enter para salto de línea)"></textarea>
+    <button id="send" class="primary">Enviar</button>
+  </div>
+</footer>
+<script>
+const EJEMPLO = "{{EJEMPLO}}";
+const base = location.pathname.endsWith("/") ? location.pathname : location.pathname + "/";
+const api = (p) => base + "api/" + p;
+const $ = (id) => document.getElementById(id);
+let sessionId = null;
+try { sessionId = sessionStorage.getItem("sid:" + base); } catch (e) {}
+if (!sessionId) { sessionId = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now())); try { sessionStorage.setItem("sid:" + base, sessionId); } catch (e) {} }
+$("sid").textContent = sessionId;
+
+fetch(api("health")).then(r => r.json()).then(h => { $("model").textContent = "· " + h.provider + " / " + h.model; }).catch(() => {});
+
+function esc(s) { return String(s).replace(/[&<>"]/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;" }[c])); }
+function inline(s) { return esc(s).replace(/`([^`]+)`/g, "<code>$1</code>").replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>").replace(/(^|[^*])\*([^*]+)\*/g, "$1<i>$2</i>").replace(/_([^_]+)_/g, "<i>$1</i>"); }
+function md(text) {
+  const lines = String(text || "").split("\n"); let out = "", i = 0;
+  while (i < lines.length) {
+    const l = lines[i];
+    if (/^\s*\|.*\|\s*$/.test(l) && i + 1 < lines.length && /^\s*\|?\s*:?-{2,}/.test(lines[i + 1])) {
+      const row = (r) => r.trim().replace(/^\||\|$/g, "").split("|").map(c => c.trim());
+      out += "<table><tr>" + row(l).map(c => "<th>" + inline(c) + "</th>").join("") + "</tr>"; i += 2;
+      while (i < lines.length && /^\s*\|.*\|\s*$/.test(lines[i])) { out += "<tr>" + row(lines[i]).map(c => "<td>" + inline(c) + "</td>").join("") + "</tr>"; i++; }
+      out += "</table>"; continue;
+    }
+    if (/^#{1,4}\s/.test(l)) { out += "<h3>" + inline(l.replace(/^#+\s/, "")) + "</h3>"; i++; continue; }
+    if (/^\s*([-*]|\d+\.)\s/.test(l)) { out += "<ul>"; while (i < lines.length && /^\s*([-*]|\d+\.)\s/.test(lines[i])) { out += "<li>" + inline(lines[i].replace(/^\s*([-*]|\d+\.)\s/, "")) + "</li>"; i++; } out += "</ul>"; continue; }
+    if (l.trim() === "") { i++; continue; }
+    out += "<p>" + inline(l) + "</p>"; i++;
+  }
+  return out;
+}
+function toolHtml(t) {
+  const cls = t.confirmacionBloqueada ? "blocked " + (t.ok ? "ok" : "fail") : (t.ok ? "ok" : "fail");
+  const extra = t.confirmacionBloqueada ? " — confirmación bloqueada por el sistema" : "";
+  return '<details class="tool ' + cls + '"><summary>' + esc(t.name) + extra + '</summary><pre><b>Argumentos</b>\n' + esc(JSON.stringify(t.args, null, 2)) + '\n\n<b>Resultado</b>\n' + esc(t.resumen) + '</pre></details>';
+}
+function add(role, text, extra) {
+  const div = document.createElement("div");
+  div.className = "msg " + role + (extra && extra.needsConfirmation ? " confirm" : "");
+  let h = "";
+  if (extra && extra.needsConfirmation) h += '<span class="badge confirm">Requiere tu confirmación</span>';
+  if (extra && extra.error) h += '<span class="badge err">Error</span>';
+  if (extra && extra.toolCalls && extra.toolCalls.length) h += '<div class="tools">' + extra.toolCalls.map(toolHtml).join("") + "</div>";
+  h += role === "user" ? "<div>" + esc(text) + "</div>" : '<div class="md">' + md(text) + "</div>";
+  div.innerHTML = h; $("chat").appendChild(div); window.scrollTo(0, document.body.scrollHeight); return div;
+}
+async function send() {
+  const message = $("input").value.trim(); if (!message) return;
+  $("input").value = ""; $("send").disabled = true; add("user", message);
+  const wait = add("assistant", "_Pensando y usando herramientas…_"); wait.querySelector(".md").classList.add("thinking");
+  try {
+    const r = await fetch(api("chat"), { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ sessionId, message }) });
+    const d = await r.json(); wait.remove();
+    if (!d.ok) { add("assistant", d.error || "Error desconocido", { error: true }); return; }
+    add("assistant", d.reply, d); $("banner").style.display = d.needsConfirmation ? "block" : "none";
+  } catch (e) { wait.remove(); add("assistant", "No pude contactar el backend: " + e.message, { error: true }); }
+  finally { $("send").disabled = false; $("input").focus(); }
+}
+$("send").onclick = send;
+$("input").addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } });
+$("example").onclick = () => { $("input").value = EJEMPLO; $("input").focus(); };
+$("reset").onclick = () => { try { sessionStorage.removeItem("sid:" + base); } catch (e) {} location.reload(); };
+</script>
+</body>
+</html>
