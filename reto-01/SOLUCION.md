@@ -21,7 +21,7 @@ web/index.html (chat)            src/http.ts + src/agent/loop.ts            src/
 | Ejecución | `src/tools/proveedor.ts` (importable sin servidor desde `demo.ts` y `modulo/`) |
 | Contrato común | `src/core/tool.ts`: `defineTool`, validación zod, `runTool` que nunca lanza, log global |
 
-Un solo servicio en Railway sirve los tres retos en `/reto-01`, `/reto-02` y `/reto-03`; cada reto también arranca solo con `bun run src/server.ts`.
+Un solo servicio en Render (Docker, plan gratuito) sirve los tres retos en `/reto-01`, `/reto-02` y `/reto-03`; cada reto también arranca solo con `bun run src/server.ts`.
 
 ## 3. Ciclo del agente
 - Bucle: system prompt (prompt + conocimiento) → modelo → si pide herramientas, el backend valida los argumentos con zod, ejecuta y devuelve el resultado → repite hasta respuesta final.
@@ -72,8 +72,12 @@ Un solo servicio en Railway sirve los tres retos en `/reto-01`, `/reto-02` y `/r
 | Simular envío | Hecho (P1) | Envío real con aprobación |
 
 ## 9. Uso de IA
-- Claude (Anthropic) como asistente de desarrollo para scaffolding, herramientas, pruebas y documentación; revisión humana de cada línea.
-- Qué se descartó de lo propuesto y por qué: [COMPLETAR POR JULIAN].
+- **Asistente usado:** Claude (Anthropic) como copiloto de desarrollo: análisis del PRD y de los fixtures (incluida la detección de casos borde), propuesta de arquitectura, primer borrador del código, de `demo.ts` y de la documentación. Cada línea fue revisada, ejecutada con `demo.ts` y probada en el despliegue.
+- **Descartado de lo propuesto y por qué:**
+  - Confiar solo en el prompt para la confirmación humana: se reemplazó por una compuerta en el backend, porque el modelo podía pasar `confirmado: true` sin que el usuario confirmara.
+  - Dejar que el modelo pase valores entre herramientas sin control: las herramientas de escritura recalculan o revalidan en el servidor lo que reciben.
+  - Dependencias pesadas (SDK del proveedor LLM, librería de Excel): se usó `fetch` directo y OOXML con `jszip`, para reducir dependencias y mantener el adaptador LLM intercambiable.
+  - Plataformas de despliegue sin disco escribible o con funciones serverless (Cloudflare Workers, Vercel): la app escribe en `out/`; se desplegó como contenedor Docker en Render.
 
 ## 10. Riesgos de producción
 | Riesgo | Mitigación |

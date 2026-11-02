@@ -42,7 +42,7 @@ bun run dev        # http://localhost:3000/reto-01/
 `proveedor_leer_solicitud`, `proveedor_mapear_campos`, `proveedor_generar_formulario`, `proveedor_armar_paquete`, `proveedor_simular_envio` (en `src/tools/proveedor.ts`).
 
 ## Link de prueba
-[COMPLETAR TRAS DESPLIEGUE]
+https://perfieria.onrender.com/reto-01/
 
 ## Prompt de ejemplo
 ```
