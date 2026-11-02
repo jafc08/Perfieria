@@ -166,7 +166,13 @@ Los nombres de servicios y campos de esta sección se marcan `[VERIFICAR EN DOCU
 
 ## 11. Uso de IA
 
-[COMPLETAR POR JULIAN: asistentes usados (p. ej. Claude), para qué tareas (análisis de fixtures, generación de código y documentación), qué se descartó de lo propuesto y por qué. Ejemplos a revisar: se descartó dejar que el modelo calcule el precio base o decida el valor de la OC; se descartó confiar en el payload enviado por el modelo.]
+- **Asistente usado:** Claude (Anthropic) como copiloto de desarrollo: análisis del PRD y de los fixtures (incluida la detección de casos borde), propuesta de arquitectura, primer borrador del código, de `demo.ts` y de la documentación. Cada línea fue revisada, ejecutada con `demo.ts` y probada en el despliegue.
+- **Descartado de lo propuesto y por qué:**
+  - Confiar solo en el prompt para la confirmación humana: se reemplazó por una compuerta en el backend, porque el modelo podía pasar `confirmado: true` sin que el usuario confirmara.
+  - Dejar que el modelo pase valores entre herramientas sin control: las herramientas de escritura recalculan o revalidan en el servidor lo que reciben.
+  - Dependencias pesadas (SDK del proveedor LLM, librería de Excel): se usó `fetch` directo y OOXML con `jszip`, para reducir dependencias y mantener el adaptador LLM intercambiable.
+  - Plataformas de despliegue sin disco escribible o con funciones serverless (Cloudflare Workers, Vercel): la app escribe en `out/`; se desplegó como contenedor Docker en Render.
+  - Dejar que el modelo calcule el precio base o decida el valor de la OC: lo hace la herramienta y queda en la trazabilidad.
 
 ## 12. Riesgos de llevar esto a producción
 

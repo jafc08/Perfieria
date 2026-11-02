@@ -39,7 +39,7 @@ bun run dev               # http://localhost:3000/reto-03/
 
 ## Link de prueba
 
-[COMPLETAR TRAS DESPLIEGUE]
+https://perfieria.onrender.com/reto-03/
 
 ## Estructura
 

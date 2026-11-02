@@ -8,7 +8,9 @@ Tres agentes conversacionales en TypeScript (Bun) con el **mismo núcleo**:
 | 02 · Contratos vigentes | `/reto-02/` | `contratos_*` | `contratos_registrar` (campos en revisión) |
 | 03 · Órdenes de compra SAP | `/reto-03/` | `oc_*` | `oc_crear` (confirmaciones pendientes) |
 
-Link de prueba: **[COMPLETAR TRAS DESPLIEGUE]**
+Link de prueba: **https://perfieria.onrender.com** ( [https://perfieria.onrender.com/reto-01/](https://perfieria.onrender.com/reto-01/) · [https://perfieria.onrender.com/reto-02/](https://perfieria.onrender.com/reto-02/) · [https://perfieria.onrender.com/reto-03/](https://perfieria.onrender.com/reto-03/) )
+
+> Plan gratuito de Render: tras 15 min sin tráfico el servicio se apaga y la primera petición tarda ~1 min. `out/` es efímero.
 
 ## Arranque local (un comando)
 
@@ -60,9 +62,9 @@ agent/prompt.md = comportamiento · src/knowledge/*.md = conocimiento · src/too
 - **Valores solo desde herramientas:** las herramientas de escritura recalculan o revalidan en servidor lo que reciben del modelo (mapeo, contrato, payload) y rechazan o corrigen diferencias.
 - El núcleo vive en `_core/` y se copia a cada reto con `bun run sync`, para que cada carpeta sea entregable sola.
 
-## Despliegue en Railway
+## Despliegue en Render
 
-1. Sube este repositorio a GitHub.
-2. En Railway: **New Project → Deploy from GitHub repo** → elige el repo (detecta el `Dockerfile`).
-3. En **Variables**: `ANTHROPIC_API_KEY` (y opcionalmente `ACCESS_KEY`). `FECHA_REFERENCIA=2026-09-03` ya viene en el Dockerfile.
-4. En **Settings → Networking → Generate Domain**. Prueba `https://<dominio>/api/health`.
+1. Repositorio en GitHub con el `Dockerfile` en la raíz.
+2. Render: **New → Web Service** → repo → runtime **Docker** → instancia **Free**.
+3. **Environment**: `ANTHROPIC_API_KEY` y `ANTHROPIC_MODEL`. `FECHA_REFERENCIA=2026-09-03` ya viene en el Dockerfile; Render inyecta `PORT`.
+4. Verificar `https://<servicio>.onrender.com/reto-01/api/health` → `"provider":"anthropic"`.

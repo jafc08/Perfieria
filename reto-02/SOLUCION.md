@@ -105,9 +105,13 @@ Un cambio de regla de negocio toca `src/contratos/reglas.ts` o el conocimiento, 
 `demo.ts` (sin modelo, determinista): msg-001 nuevo con póliza pendiente · msg-002 nuevo no_aplica (USD 120.000) · msg-003 actualización de CT-2026-011 (valor, fecha fin y póliza → pendiente) · msg-004 duplicado · msg-005 rechazado · msg-006 en revisión y luego registrado con confirmación · alertas: CT-2026-009 (27 días) y CT-2026-004 (42 días, póliza pendiente: riesgo principal).
 
 ## 10. Uso de IA
-- Claude (Anthropic) se usó para analizar el PRD y los fixtures, proponer la arquitectura y escribir el primer borrador del código y la documentación; todo fue revisado y ejecutado con `demo.ts`.
-- Descartado de lo propuesto: extraer los datos con el LLM (no determinista) y confiar en el `contrato` que pasa el modelo a `registrar`.
-- `[COMPLETAR POR JULIAN: herramientas adicionales usadas, qué ajustó a mano y por qué]`
+- **Asistente usado:** Claude (Anthropic) como copiloto de desarrollo: análisis del PRD y de los fixtures (incluida la detección de casos borde), propuesta de arquitectura, primer borrador del código, de `demo.ts` y de la documentación. Cada línea fue revisada, ejecutada con `demo.ts` y probada en el despliegue.
+- **Descartado de lo propuesto y por qué:**
+  - Confiar solo en el prompt para la confirmación humana: se reemplazó por una compuerta en el backend, porque el modelo podía pasar `confirmado: true` sin que el usuario confirmara.
+  - Dejar que el modelo pase valores entre herramientas sin control: las herramientas de escritura recalculan o revalidan en el servidor lo que reciben.
+  - Dependencias pesadas (SDK del proveedor LLM, librería de Excel): se usó `fetch` directo y OOXML con `jszip`, para reducir dependencias y mantener el adaptador LLM intercambiable.
+  - Plataformas de despliegue sin disco escribible o con funciones serverless (Cloudflare Workers, Vercel): la app escribe en `out/`; se desplegó como contenedor Docker en Render.
+  - Extraer los datos del contrato con el LLM: no es determinista; la extracción es por reglas y el modelo solo propone.
 
 ## 11. Riesgos de producción y mitigación
 | Riesgo | Mitigación |

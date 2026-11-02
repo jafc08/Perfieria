@@ -2,7 +2,7 @@
 
 Agente conversacional que actúa como punto único de recepción de contratos: lee el buzón, extrae datos con confianza por campo, clasifica (nuevo / actualización / duplicado / rechazado), alimenta el maestro simulado de SharePoint y genera alertas.
 
-**Link de prueba:** [COMPLETAR TRAS DESPLIEGUE]/reto-02/
+**Link de prueba:** https://perfieria.onrender.com/reto-02/
 
 ## Verificación sin modelo (no requiere clave)
 ```bash
