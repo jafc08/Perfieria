@@ -1,0 +1,16 @@
+{
+  "name": "periferia-retos",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "bun run server.ts",
+    "dev": "bun run server.ts",
+    "sync": "bun run scripts/sync-core.ts",
+    "demo:all": "bun run reto-01/demo.ts && bun run reto-02/demo.ts && bun run reto-03/demo.ts"
+  },
+  "dependencies": {
+    "jszip": "^3.10.1",
+    "pdf-lib": "^1.17.1",
+    "zod": "^3.25.76"
+  }
+}
